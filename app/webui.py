@@ -1,7 +1,7 @@
 import gradio as gr
 
 from summarizer import load_document, setup_summarization_chain
-from translator import setup_translator_chain
+from translator import translate_text
 from yt_summarizer import check_link, summarize_video
 
 
@@ -13,12 +13,11 @@ def summarize(url):
         llm_chain = setup_summarization_chain()
         result = llm_chain.run(docs)
 
-    return [result, gr.Button("🇹🇷 Translate ", visible=True)]
+    return [result, gr.Button("Translate ", visible=True), gr.Dropdown(visible=True)]
 
 
-def translate(text):
-    llm_chain = setup_translator_chain()
-    result = llm_chain.run(text)
+def translate(text, target_language):
+    result = translate_text(text, target_language)
     return result
 
 
@@ -35,7 +34,15 @@ with gr.Blocks() as demo:
             btn_generate = gr.Button("Generate")
 
             summary = gr.Markdown(label="Summary")
-            btn_translate = gr.Button(visible=False)
+
+            with gr.Row():
+                btn_translate = gr.Button(visible=False)
+                language_dropdown = gr.Dropdown(
+                    choices=["Spanish", "French", "German", "Italian", "Portuguese", "Turkish", "English"],
+                    value="Turkish",
+                    label="Target Language",
+                    visible=False
+                )
 
     gr.Examples(
         [
@@ -54,7 +61,7 @@ with gr.Blocks() as demo:
         Repo: github.com/mertcobanov/easy-web-summarizer
         ```"""
     )
-    btn_generate.click(summarize, inputs=[url], outputs=[summary, btn_translate])
-    btn_translate.click(translate, inputs=[summary], outputs=[summary])
+    btn_generate.click(summarize, inputs=[url], outputs=[summary, btn_translate, language_dropdown])
+    btn_translate.click(translate, inputs=[summary, language_dropdown], outputs=[summary])
 
 demo.launch(server_name="0.0.0.0")
